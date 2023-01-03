@@ -1,0 +1,32 @@
+node{
+    
+    stage("Git Clone"){
+        
+        git credentialsId: 'GIT_CREDENTIALS', url: 'https://github.com/siddu041996/spring-jenkins-docker-k8s.git'
+    }
+
+    stage("Maven Clean Build"){
+        
+      def mavenHome = tool name: "maven-3.8.7", type: "maven"
+      def mavenCMD = "${mavenHome}/bin/mvn"
+      sh "${mavenCMD} clean package"
+    }
+    
+    stage("Build Docker Image"){
+        
+        sh "docker build -t siddudevops/spring-boot-mongo ."
+    }
+    
+    stage("Push Docker Image"){
+        
+      withCredentials([string(credentialsId: 'DOCKER_HUB_CREDENTIALS', variable: 'DOCKER_HUB_CREDENTIALS')]) {
+        sh "docker login -u siddudevops -p ${DOCKER_HUB_CREDENTIALS}"  
+    }    
+        
+        sh "docker push siddudevops/spring-boot-mongo "
+    }
+    
+    stage("deploy to kubernetes clusture"){
+        sh "kubectl apply -f springBootMongo.yml"
+    }
+}
